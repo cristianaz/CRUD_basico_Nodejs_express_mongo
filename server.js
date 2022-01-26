@@ -1,7 +1,7 @@
 let express = require('express')
 let { MongoClient, ObjectId } = require('mongodb')
 
-
+let sanitizeHTML = require('sanitize-html')
 
 let app = express()
 let db
@@ -25,6 +25,18 @@ app.use(express.json())
     agregue ese objeto body al objeto request.
     */
 app.use(express.urlencoded({ extended: false }))
+
+function passwordProctected(req, res, next) {
+    res.set('www-Authenticate', 'Basic realms="Simple Todo App"')
+    console.log(req.headers.authorization)
+    if (req.headers.authorization == "Basic aG9sYTpob2xh") {
+        next()
+    } else {
+        res.status(401).send("Authentication required")
+    }
+}
+
+app.use(passwordProctected)
 
 app.get('/', function(req, res) {
     db.collection('items').find().toArray(function(err, items) {
@@ -64,14 +76,18 @@ app.get('/', function(req, res) {
     })
 
 })
+
+
 app.post('/create-item', function(req, res) {
-    db.collection('items').insertOne({ text: req.body.text }, function(err, info) {
-        res.json({ _id: info.insertedId, text: req.body.text })
+    let safeText = sanitizeHTML(req.body.text, { allowedTags: [], allowedAttributes: {} })
+    db.collection('items').insertOne({ text: safeText }, function(err, info) {
+        res.json({ _id: info.insertedId, text: safeText })
     })
 })
 
 app.post('/update-item', function(req, res) {
-    db.collection('items').findOneAndUpdate({ _id: new ObjectId(req.body.id) }, { $set: { text: req.body.text } }, function() {
+    let safeText = sanitizeHTML(req.body.text, { allowedTags: [], allowedAttributes: {} })
+    db.collection('items').findOneAndUpdate({ _id: new ObjectId(req.body.id) }, { $set: { text: safeText } }, function() {
         res.send("Success")
     })
 })
