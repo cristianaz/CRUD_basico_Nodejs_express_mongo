@@ -6,6 +6,11 @@ let sanitizeHTML = require('sanitize-html')
 let app = express()
 let db
 
+let port = process.env.port
+if (port == null || port == "") {
+    port == 3000
+}
+
 app.use(express.static('public'))
 
 
@@ -13,7 +18,7 @@ async function go() {
     let client = new MongoClient('mongodb+srv://user:root@cluster0.8rwwl.mongodb.net/TodoApp?retryWrites=true&w=majority')
     await client.connect()
     db = client.db()
-    app.listen(3000)
+    app.listen(port)
 }
 
 go()
